@@ -1,1 +1,83 @@
+import copy
 
+class Memento:
+    def __init__(self, state):
+        self.state = state
+
+class CashRegister:
+    def __init__(self):
+        self.checks = []
+        self.statistics = {
+            'total_items_sold': 0,
+            'items_sold_by_name': {},
+            'total_revenue': 0
+        }
+        self.mementos = []
+
+    def create_memento(self):
+        return Memento(copy.deepcopy(self.__dict__))
+
+    def restore_memento(self, memento):
+        self.__dict__ = memento.state
+
+    def add_item(self, name, price):
+        self.checks.append({'name': name, 'price': price})
+        self.update_statistics()
+
+    def update_statistics(self):
+        self.statistics['total_items_sold'] += 1
+        for item in self.checks[-1:]:
+            name = item['name']
+            self.statistics['items_sold_by_name'][name] = self.statistics['items_sold_by_name'].get(name, 0) + 1
+            self.statistics['total_revenue'] += item['price']
+
+    def display_statistics(self):
+        print("=== Cтатистика ===")
+        print(f"Всего продано товаров: {self.statistics['total_items_sold']}")
+        print("Наименование:")
+        for name, count in self.statistics['items_sold_by_name'].items():
+            print(f"{name}: {count} штук")
+        print(f"Выручка: {self.statistics['total_revenue']}")
+
+    def undo_operation(self):
+        if len(self.mementos) > 1:
+            self.mementos.pop()
+            self.restore_memento(self.mementos[-1])
+            print("Операция отменена.")
+        else:
+            print("Операций еще не было.")
+
+def main():
+    cash_register = CashRegister()
+    memento = cash_register.create_memento()
+    cash_register.mementos.append(memento)
+
+    while True:
+        print("\n=== Меню Кассового Аппарата ===")
+        print("1. Новый Чек")
+        print("2. Просмотр Статистики")
+        print("3. Отмена Операции")
+        print("4. Выход")
+
+        choice = input("Введите ваш выбор: ")
+
+        if choice == "1":
+            name = input("Введите наименование товара: ")
+            price = float(input("Введите цену товара: "))
+            cash_register.add_item(name, price)
+            memento = cash_register.create_memento()
+            cash_register.mementos.append(memento)
+            print("Товар добавлен успешно.")
+        elif choice == "2":
+            cash_register.display_statistics()
+        elif choice == "3":
+            cash_register.undo_operation()
+        elif choice == "4":
+            print("Выход из Кассового Аппарата. До свидания!")
+            break
+        else:
+            print("Неверный выбор. Пожалуйста, введите допустимую опцию.")
+
+
+if __name__ == "__main__":
+    main()
